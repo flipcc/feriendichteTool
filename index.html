@@ -1,0 +1,1225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Feriendichte</title>
+<meta name="description" content="A year at a glance: how many German school holidays overlap each day, so you can pick low-price, low-crowd travel dates.">
+<style>
+:root {
+  --paper: #f0efe9;
+  --card: #ffffff;
+  --ink: #2c2c2a;
+  --ink-2: #5f5e5a;
+  --ink-3: #78776f;
+  --rule: #e6e4dc;
+  --rule-2: #dddcd5;
+  --accent: #2c2c2a;
+  --accent-soft: #eceadf;
+
+  --b0: #eceae2; --f0: #6f6a60;
+  --b1: #f9e9c6; --f1: #5c4712;
+  --b2: #efc572; --f2: #56390a;
+  --b3: #e08741; --f3: #4a2408;
+  --b4: #b94c21; --f4: #fdeee6;
+  --b5: #77250e; --f5: #f9e3da;
+
+  --cw: #3d7a4f; --cwf: #f1f7f2;
+  --cwp: #b9d5bd; --cwpf: #20452b;
+
+  --pad: clamp(14px, 3vw, 28px);
+  --cell: 26px;
+  --radius: 6px;
+  --mono-num: "SF Mono", "Cascadia Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+  --sans: ui-sans-serif, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+:root[data-theme="light"] { color-scheme: light; }
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --paper: #1f1e1c;
+  --card: #2a2825;
+  --ink: #edeae2;
+  --ink-2: #a5a199;
+  --ink-3: #7a766e;
+  --rule: #3a3733;
+  --rule-2: #4a4641;
+  --accent: #edeae2;
+  --accent-soft: #3a3733;
+
+  --b0: #33302b; --f0: #7a7468;
+
+  /* The mid orange takes light text in dark mode. On a hatched cell the near-
+     black lines make a dark digit vanish; the swatches follow the cells so the
+     control and the map say the same thing. */
+  --f3: #fdf0e6;
+
+  --cw: #417f55; --cwf: #f3faf4;
+  --cwp: #2d4b36; --cwpf: #d0e4d5;
+}
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  padding: 0 var(--pad) 64px;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+h1, h2, h3 { font-weight: 600; letter-spacing: -0.015em; margin: 0; }
+
+a { color: var(--accent); text-underline-offset: 2px; }
+
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+/* ---------- masthead ---------- */
+
+.masthead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px 24px;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 28px 0 18px;
+  border-bottom: 1px solid var(--rule-2);
+}
+
+.masthead h1 {
+  font-family: var(--mono-num);
+  font-size: clamp(24px, 3.6vw, 31px);
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+}
+
+.masthead-id { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 18px; }
+
+.yearpick {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  font-family: var(--mono-num);
+  font-variant-numeric: tabular-nums;
+}
+
+.yr-now {
+  font-size: clamp(26px, 4vw, 34px);
+  line-height: 1.1;
+  color: var(--ink);
+}
+
+.yr-side {
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  font-size: 17px;
+  line-height: 1.1;
+  color: var(--ink-3);
+  background: none;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+}
+
+.yr-side:hover:not(:disabled) { color: var(--ink); border-color: transparent; }
+
+.yr-side:disabled {
+  color: var(--rule-2);
+  cursor: default;
+}
+
+.theme { display: flex; gap: 4px; }
+
+.theme button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 26px;
+  padding: 0;
+  border-radius: 4px;
+  border: 1px solid var(--rule-2);
+  background: none;
+  color: var(--ink-3);
+}
+
+.theme button:hover { color: var(--ink); border-color: var(--ink); }
+
+.theme button[aria-checked="true"] {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--card);
+}
+
+.theme svg { width: 15px; height: 15px; }
+
+/* ---------- controls ---------- */
+
+button {
+  font: inherit;
+  color: inherit;
+  background: var(--card);
+  border: 1px solid var(--rule-2);
+  border-radius: var(--radius);
+  padding: 5px 11px;
+  cursor: pointer;
+}
+
+button:hover { border-color: var(--accent); }
+
+:where(button, input, [tabindex]):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.panel {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 14px 0 6px;
+}
+
+.row, .legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  padding: 5px 0;
+  font-size: 12px;
+  color: var(--ink-2);
+  min-height: 28px;
+}
+
+.legend {
+  max-width: 1440px;
+  margin: 18px auto 0;
+  gap: 10px 8px;
+  border-top: 1px solid var(--rule);
+  padding-top: 12px;
+}
+.legend-cool { flex-basis: 100%; gap: 10px 8px; border-top: 0; margin: 0; padding: 2px 0 0; }
+
+.row-label { min-width: 0; }
+.row-note { color: var(--ink-3); }
+
+.tally {
+  display: inline-block;
+  min-width: 3ch;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.opts { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+
+.opt {
+  font: inherit;
+  padding: 3px 10px;
+  border-radius: 4px;
+  background: none;
+  border: 1px solid var(--rule-2);
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.opt:hover { border-color: var(--ink); color: var(--ink); }
+
+/* Same square the calendar draws, so the control and the map are one language */
+.opt-band {
+  position: relative;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--rule-2);
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.opt-band:hover { outline: 1px solid var(--ink); outline-offset: 1px; }
+
+/* Same tick as the checkbox above, drawn in the band's own text colour so it
+   reads against every fill without a second palette. */
+.opt-band[aria-checked="true"]::after {
+  content: "";
+  position: absolute;
+  left: 8px;
+  top: 4px;
+  width: 4px;
+  height: 9px;
+  border: solid currentColor;
+  border-width: 0 2px 2px 0;
+  transform: rotate(42deg);
+}
+
+/* The no-heat swatch is deliberately mute, so its text colour is too faint to
+   carry a tick. That one borrows the page ink. */
+.opt-band.p0[aria-checked="true"]::after { border-color: var(--ink); }
+
+.opt[aria-checked="true"] {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--card);
+}
+
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font: inherit;
+  color: var(--ink-2);
+  background: none;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+}
+
+.toggle:hover { color: var(--ink); border-color: transparent; }
+
+.toggle-box {
+  flex: none;
+  width: 15px;
+  height: 15px;
+  border: 1.5px solid var(--rule-2);
+  border-radius: 3px;
+  position: relative;
+}
+
+.toggle[aria-pressed="true"] { color: var(--ink); }
+.toggle[aria-pressed="true"] .toggle-box { background: var(--ink); border-color: var(--ink); }
+
+.toggle[aria-pressed="true"] .toggle-box::after {
+  content: "";
+  position: absolute;
+  left: 4px; top: 0;
+  width: 4px; height: 8px;
+  border: solid var(--card);
+  border-width: 0 2px 2px 0;
+  transform: rotate(42deg);
+}
+
+.legend .sw { padding: 3px 10px; border-radius: 4px; }
+
+/* ---------- status ---------- */
+
+.status {
+  max-width: 1440px;
+  margin: 0 auto;
+  font-size: 13px;
+  color: var(--ink-2);
+  min-height: 20px;
+  padding: 4px 0;
+}
+
+.status.err { color: #b33; }
+
+/* ---------- calendar ---------- */
+
+.calendar {
+  max-width: 1440px;
+  margin: 14px auto 0;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(248px, 1fr));
+}
+
+.month {
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  padding: 10px 11px 11px;
+}
+
+.month > h2 {
+  font-size: 14px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.month > h2 .mavg {
+  font-family: var(--mono-num);
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--ink-3);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: calc(2.4ch + 11px) repeat(7, 1fr);
+  gap: 2px;
+}
+
+.grid .hd {
+  font-size: 10px;
+  color: var(--ink-3);
+  text-align: center;
+  padding-bottom: 2px;
+}
+
+.wk {
+  font-family: var(--mono-num);
+  font-variant-numeric: tabular-nums;
+  font-size: 10px;
+  color: var(--ink-3);
+  margin-right: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.day {
+  aspect-ratio: 1 / 1;
+  min-height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--mono-num);
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  border-radius: 3px;
+  position: relative;
+}
+
+.day.pad { visibility: hidden; cursor: default; }
+
+.day.ph::after {
+  content: "";
+  position: absolute;
+  top: 2px; right: 2px;
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.85;
+}
+
+.day.today { box-shadow: inset 0 0 0 2px var(--ink); }
+
+.p0 { background: var(--b0); color: var(--f0); }
+.p1 { background: var(--b1); color: var(--f1); }
+.p2 { background: var(--b2); color: var(--f2); }
+.p3 { background: var(--b3); color: var(--f3); }
+.p4 { background: var(--b4); color: var(--f4); }
+.p5 { background: var(--b5); color: var(--f5); }
+
+/* Cut the fills with fine lines of the page surface. The band colour and the
+   ramp order stay exactly as they were in both modes — roughly a third of each
+   cell is simply given back to the background, so the heat stops shouting and
+   the solid green of a viable departure date has somewhere to stand out from. */
+.day.p1, .day.p2, .day.p3, .day.p4, .day.p5 {
+  background-image: repeating-linear-gradient(45deg,
+    var(--card) 0 1.5px, transparent 1.5px 5px);
+}
+
+.cw { background: var(--cw); color: var(--cwf); }
+.cwp { background: var(--cwp); color: var(--cwpf); }
+
+:root[data-theme="dark"] .day,
+:root[data-theme="dark"] .sw { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.09); }
+:root[data-theme="dark"] .day.today { box-shadow: inset 0 0 0 2px var(--ink); }
+
+
+@media (max-width: 560px) {
+  .calendar { grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
+}
+
+@media print {
+  body { background: #fff; padding: 0; }
+  .row, .yr-side, .status { display: none; }
+  .calendar { grid-template-columns: repeat(4, 1fr); }
+  .month { break-inside: avoid; }
+}
+</style>
+<script>
+(function () {
+  try {
+    var p = JSON.parse(localStorage.getItem("ferienradar:v1:prefs") || "{}").theme || "system";
+    var dark = p === "dark" || (p !== "light" && matchMedia("(prefers-color-scheme: dark)").matches);
+    document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+  } catch (e) {
+    document.documentElement.setAttribute("data-theme", "light");
+  }
+})();
+</script>
+<link rel="icon" href="icon-180.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#f0efe9" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1f1e1c" media="(prefers-color-scheme: dark)">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-id">
+    <h1>Feriendichte</h1>
+    <div class="yearpick">
+      <button type="button" id="yearPrev" class="yr-side"></button>
+      <output id="yearLabel" class="yr-now" aria-live="polite">—</output>
+      <button type="button" id="yearNext" class="yr-side"></button>
+    </div>
+  </div>
+
+  <div class="theme" id="theme" role="radiogroup" aria-label="Colour theme"></div>
+</header>
+
+<section class="panel" aria-labelledby="ctrl-h">
+  <h2 id="ctrl-h" class="sr-only">Settings</h2>
+
+  <div class="row">
+    <button type="button" id="neighbours" class="toggle" aria-pressed="false">
+      <span>Count neighbouring countries too</span>
+      <span class="toggle-box" aria-hidden="true"></span>
+    </button>
+  </div>
+
+  <div class="row">
+    <span class="row-label">Trip length</span>
+    <div class="opts" id="tripLen" role="radiogroup" aria-label="Trip length"></div>
+  </div>
+
+  <div class="row">
+    <span class="row-label">Accept also days with a density of</span>
+    <div class="opts" id="calmBand" role="radiogroup" aria-label="Highest density accepted"></div>
+    <span class="row-note" id="calmCount"></span>
+  </div>
+
+</section>
+
+<div class="status" id="status" role="status"></div>
+
+<main id="calendar" class="calendar"></main>
+
+<div class="legend" id="legend"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  var API = "https://openholidaysapi.org";
+  var CACHE_PREFIX = "ferienradar:v1:";
+
+  // Population in millions, Destatis 2024. Used to weight how much a state's
+  // holidays actually move prices and traffic.
+  var STATES = [
+    { code: "DE-NW", short: "NRW", name: "Nordrhein-Westfalen", pop: 18.14 },
+    { code: "DE-BY", short: "BY", name: "Bayern", pop: 13.44 },
+    { code: "DE-BW", short: "BW", name: "Baden-Württemberg", pop: 11.32 },
+    { code: "DE-NI", short: "NI", name: "Niedersachsen", pop: 8.16 },
+    { code: "DE-HE", short: "HE", name: "Hessen", pop: 6.41 },
+    { code: "DE-RP", short: "RP", name: "Rheinland-Pfalz", pop: 4.17 },
+    { code: "DE-SN", short: "SN", name: "Sachsen", pop: 4.07 },
+    { code: "DE-BE", short: "BE", name: "Berlin", pop: 3.9 },
+    { code: "DE-SH", short: "SH", name: "Schleswig-Holstein", pop: 2.97 },
+    { code: "DE-BB", short: "BB", name: "Brandenburg", pop: 2.6 },
+    { code: "DE-ST", short: "ST", name: "Sachsen-Anhalt", pop: 2.16 },
+    { code: "DE-TH", short: "TH", name: "Thüringen", pop: 2.11 },
+    { code: "DE-HH", short: "HH", name: "Hamburg", pop: 1.9 },
+    { code: "DE-MV", short: "MV", name: "Mecklenburg-Vorpommern", pop: 1.63 },
+    { code: "DE-SL", short: "SL", name: "Saarland", pop: 0.99 },
+    { code: "DE-HB", short: "HB", name: "Bremen", pop: 0.68 }
+  ];
+
+  var COUNTRIES = [
+    { iso: "NL", name: "Netherlands", pop: 18.0, on: true },
+    { iso: "AT", name: "Austria", pop: 9.2, on: true },
+    { iso: "CH", name: "Switzerland", pop: 9.0, on: true },
+    { iso: "BE", name: "Belgium", pop: 11.8, on: false },
+    { iso: "FR", name: "France", pop: 68.4, on: false },
+    { iso: "CZ", name: "Czechia", pop: 10.9, on: false },
+    { iso: "PL", name: "Poland", pop: 36.6, on: false },
+    { iso: "IT", name: "Italy", pop: 58.9, on: false },
+    { iso: "LU", name: "Luxembourg", pop: 0.67, on: false }
+  ];
+
+  // Five steps, matched to the thresholds the source legend used: it banded by
+  // number of states (1–3, 4–6, 7–10, 11–14, 15–16), which on a population-
+  // weighted 0–100 scale lands at roughly 20, 40, 65 and 88.
+  var BANDS = [
+    { max: 0.01, cls: "p0", label: "Nobody out" },
+    { max: 20, cls: "p1", label: "Barely anyone" },
+    { max: 40, cls: "p2", label: "A few regions" },
+    { max: 65, cls: "p3", label: "About half" },
+    { max: 88, cls: "p4", label: "Most" },
+    { max: Infinity, cls: "p5", label: "Everyone" }
+  ];
+
+  var WEEKDAYS = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
+
+  // From September the interesting year is the next one — the current summer is
+  // already behind you and its holidays are not something you can still book.
+  function defaultYear() {
+    var now = new Date();
+    return now.getFullYear() + (now.getMonth() >= 8 ? 1 : 0);
+  }
+
+  var state = {
+    year: defaultYear(),
+    neighbours: false,
+    tripLen: 7,
+    calmBand: 0,
+    theme: "system"
+  };
+
+  var data = null;       // built index for the loaded year
+  var loadedYear = null;
+  var scores = null;     // Map iso -> { total, school, pub, foreign }
+  var calmStart = null;  // Map iso -> true when a calm trip can start that day
+  var windowScore = null; // Map iso -> average score of a trip starting that day
+  var calmTotal = 0;
+
+  var el = {
+    yearLabel: document.getElementById("yearLabel"),
+    yearPrev: document.getElementById("yearPrev"),
+    yearNext: document.getElementById("yearNext"),
+    theme: document.getElementById("theme"),
+    neighbours: document.getElementById("neighbours"),
+    tripLen: document.getElementById("tripLen"),
+    calmBand: document.getElementById("calmBand"),
+    calmCount: document.getElementById("calmCount"),
+    legend: document.getElementById("legend"),
+    status: document.getElementById("status"),
+    calendar: document.getElementById("calendar")
+  };
+
+  /* ---------------- dates ---------------- */
+
+  function iso(d) {
+    var m = d.getMonth() + 1, day = d.getDate();
+    return d.getFullYear() + "-" + (m < 10 ? "0" : "") + m + "-" + (day < 10 ? "0" : "") + day;
+  }
+
+  function parseISO(s) {
+    var p = s.split("-");
+    return new Date(+p[0], +p[1] - 1, +p[2]);
+  }
+
+  function addDays(d, n) {
+    var x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    x.setDate(x.getDate() + n);
+    return x;
+  }
+
+  function mondayOf(d) {
+    var dn = (d.getDay() + 6) % 7;
+    return addDays(d, -dn);
+  }
+
+  function isoWeekNo(d) {
+    var t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    t.setUTCDate(t.getUTCDate() - ((t.getUTCDay() + 6) % 7) + 3);
+    var first = new Date(Date.UTC(t.getUTCFullYear(), 0, 4));
+    first.setUTCDate(first.getUTCDate() - ((first.getUTCDay() + 6) % 7) + 3);
+    return 1 + Math.round((t - first) / 604800000);
+  }
+
+  var fmtLong = new Intl.DateTimeFormat("en-GB", { weekday: "short", day: "numeric", month: "short", year: "numeric" });
+  var fmtMonth = new Intl.DateTimeFormat("en-GB", { month: "long" });
+
+  /* ---------------- fetching ---------------- */
+
+  function cacheGet(key) {
+    try {
+      var raw = localStorage.getItem(CACHE_PREFIX + key);
+      if (!raw) return null;
+      var obj = JSON.parse(raw);
+      if (!obj || Date.now() - obj.t > 1000 * 60 * 60 * 24 * 30) return null;
+      return obj.v;
+    } catch (e) { return null; }
+  }
+
+  function cacheSet(key, value) {
+    try {
+      localStorage.setItem(CACHE_PREFIX + key, JSON.stringify({ t: Date.now(), v: value }));
+    } catch (e) { /* quota or private mode: run without cache */ }
+  }
+
+  function getJSON(path, key) {
+    var hit = cacheGet(key);
+    if (hit) return Promise.resolve(hit);
+    return fetch(API + path, { headers: { accept: "application/json" } })
+      .then(function (r) {
+        if (!r.ok) throw new Error("API responded " + r.status);
+        return r.json();
+      })
+      .then(function (json) {
+        var arr = Array.isArray(json) ? json : (json.schoolHolidays || json.publicHolidays || json.subdivisions || []);
+        cacheSet(key, arr);
+        return arr;
+      });
+  }
+
+  function topLevel(code) {
+    var p = String(code || "").split("-");
+    return p.length >= 2 ? p[0] + "-" + p[1] : p[0];
+  }
+
+  // The API identifies German states as "DE-BY"; tolerate a bare "BY" too.
+  var STATE_LOOKUP = {};
+  STATES.forEach(function (s) {
+    STATE_LOOKUP[s.code] = s.code;
+    STATE_LOOKUP[s.short] = s.code;
+  });
+
+  function germanState(sub) {
+    return STATE_LOOKUP[topLevel(sub.code)] || STATE_LOOKUP[sub.shortName] || null;
+  }
+
+  function nameOf(entry) {
+    if (!entry || !entry.name || !entry.name.length) return "Holiday";
+    for (var i = 0; i < entry.name.length; i++) {
+      if (entry.name[i].language === "DE") return entry.name[i].text;
+    }
+    return entry.name[0].text;
+  }
+
+  function loadYear(year) {
+    var from = (year - 1) + "-12-01";
+    var to = (year + 1) + "-01-31";
+    var wanted = state.neighbours ? COUNTRIES : [];
+    var jobs = [
+      getJSON("/SchoolHolidays?countryIsoCode=DE&languageIsoCode=DE&validFrom=" + from + "&validTo=" + to, "de-school-" + year),
+      getJSON("/PublicHolidays?countryIsoCode=DE&languageIsoCode=DE&validFrom=" + from + "&validTo=" + to, "de-public-" + year)
+    ];
+
+    function soft(p) { return p.catch(function () { return []; }); }
+
+    wanted.forEach(function (c) {
+      jobs.push(soft(getJSON("/SchoolHolidays?countryIsoCode=" + c.iso + "&languageIsoCode=EN&validFrom=" + from + "&validTo=" + to, c.iso + "-school-" + year)));
+      jobs.push(soft(getJSON("/Subdivisions?countryIsoCode=" + c.iso + "&languageIsoCode=EN", c.iso + "-subs")));
+    });
+
+    return Promise.all(jobs).then(function (res) {
+      var index = { days: {}, foreignTotals: {} };
+
+      function day(k) {
+        if (!index.days[k]) index.days[k] = { school: {}, pub: {}, foreign: {} };
+        return index.days[k];
+      }
+
+      function expand(entry, fn) {
+        var s = parseISO(entry.startDate), e = parseISO(entry.endDate);
+        if (isNaN(s) || isNaN(e)) return;
+        for (var d = s; d <= e; d = addDays(d, 1)) fn(iso(d));
+      }
+
+      // German school holidays
+      res[0].forEach(function (h) {
+        var codes = {};
+        if (h.nationwide) {
+          STATES.forEach(function (s) { codes[s.code] = true; });
+        } else if (h.subdivisions) {
+          h.subdivisions.forEach(function (sub) {
+            var c = germanState(sub);
+            if (c) codes[c] = true;
+          });
+        }
+        var label = nameOf(h);
+        expand(h, function (k) {
+          var rec = day(k);
+          Object.keys(codes).forEach(function (c) { rec.school[c] = label; });
+        });
+      });
+
+      // German public holidays
+      res[1].forEach(function (h) {
+        var codes = {};
+        if (h.nationwide) {
+          STATES.forEach(function (s) { codes[s.code] = true; });
+        } else if (h.subdivisions) {
+          h.subdivisions.forEach(function (sub) {
+            var c = germanState(sub);
+            if (c) codes[c] = true;
+          });
+        }
+        var label = nameOf(h);
+        expand(h, function (k) {
+          var rec = day(k);
+          Object.keys(codes).forEach(function (c) { rec.pub[c] = label; });
+        });
+      });
+
+      // Neighbouring countries
+      wanted.forEach(function (c, i) {
+        var hol = res[2 + i * 2] || [];
+        var subs = res[3 + i * 2] || [];
+        var total = subs.length || 1;
+        index.foreignTotals[c.iso] = total;
+
+        hol.forEach(function (h) {
+          var codes = {};
+          if (h.nationwide || !h.subdivisions || !h.subdivisions.length) {
+            codes["*"] = true;
+          } else {
+            h.subdivisions.forEach(function (sub) { codes[topLevel(sub.code)] = true; });
+          }
+          expand(h, function (k) {
+            var rec = day(k);
+            if (!rec.foreign[c.iso]) rec.foreign[c.iso] = {};
+            Object.keys(codes).forEach(function (code) { rec.foreign[c.iso][code] = true; });
+          });
+        });
+      });
+
+      return index;
+    });
+  }
+
+  /* ---------------- model ---------------- */
+
+  // Germany is always counted in full. Neighbours, when switched on, join the
+  // same pool at their own population, so nothing is scaled down or fudged.
+  var DE_POP = STATES.reduce(function (a, s) { return a + s.pop; }, 0);
+
+  // The score is one thing only: the share of the pool whose schools are on
+  // holiday that day. 0 means nobody anywhere, 100 means everybody. Public
+  // holidays are tracked but deliberately kept out of it — they show up as a
+  // dot on the cell and in the day detail instead.
+  function computeScores() {
+    var countries = state.neighbours ? COUNTRIES : [];
+    var poolPop = DE_POP + countries.reduce(function (a, c) { return a + c.pop; }, 0);
+
+    scores = {};
+    Object.keys(data.days).forEach(function (k) {
+      var rec = data.days[k];
+
+      var sp = 0, pp = 0;
+      STATES.forEach(function (s) {
+        if (rec.school[s.code]) sp += s.pop;
+        if (rec.pub[s.code]) pp += s.pop;
+      });
+
+      var fp = 0;
+      countries.forEach(function (c) {
+        var f = rec.foreign[c.iso];
+        if (!f) return;
+        var frac = f["*"] ? 1 : Object.keys(f).length / (data.foreignTotals[c.iso] || 1);
+        fp += c.pop * Math.min(1, frac);
+      });
+
+      scores[k] = {
+        de: sp / DE_POP,
+        foreign: countries.length ? fp / (poolPop - DE_POP) : 0,
+        pub: pp / DE_POP,
+        total: 100 * (sp + fp) / poolPop
+      };
+    });
+  }
+
+  // A public holiday inside a window does not disqualify it, but it does change
+  // the trip: busier roads, shut shops, and a day of leave you did not spend.
+  // Worth flagging, not worth scoring. Only holidays observed by this much of
+  // Germany count — otherwise a Saxony-only Feiertag flags the whole country.
+  var PUB_MIN_SHARE = 0.4;
+
+  function scoreOf(k) {
+    var s = scores[k];
+    return s ? s.total : 0;
+  }
+
+  function bandIndex(score) {
+    for (var i = 0; i < BANDS.length; i++) if (score < BANDS[i].max) return i;
+    return BANDS.length - 1;
+  }
+
+  function band(score) {
+    return BANDS[bandIndex(score)];
+  }
+
+  function windowStats(startIso, len) {
+    var s = parseISO(startIso), sum = 0, peak = 0, pub = [];
+    for (var i = 0; i < len; i++) {
+      var day = addDays(s, i);
+      var dk = iso(day);
+      var v = scoreOf(dk);
+      sum += v;
+      if (v > peak) peak = v;
+
+      // A public holiday on a Saturday or Sunday changes nothing about the
+      // trip — no leave saved, no extra traffic beyond an ordinary weekend —
+      // so it must not downgrade an otherwise clear window.
+      var working = (day.getDay() + 6) % 7 < 5;
+      var sc = scores[dk];
+      if (working && sc && sc.pub >= PUB_MIN_SHARE && data.days[dk]) {
+        STATES.forEach(function (st) {
+          var n = data.days[dk].pub[st.code];
+          if (n && pub.indexOf(n) === -1) pub.push(n);
+        });
+      }
+    }
+    return { avg: sum / len, peak: peak, peakBand: bandIndex(peak), pub: pub };
+  }
+
+  // A window is calm only when every single day in it clears the ceiling.
+  // Averaging would let a fortnight hide three peak days inside it.
+  //
+  // A day is marked when a calm trip can START on it. Shading days merely
+  // *covered* by someone else's calm window was misleading: 28 January could
+  // come out blue while being an impossible departure date.
+  function computeCalmStarts() {
+    var len = state.tripLen;
+    calmStart = {};
+    windowScore = {};
+    calmTotal = 0;
+
+    var to = new Date(state.year, 11, 31);
+    for (var d = new Date(state.year, 0, 1); d <= to; d = addDays(d, 1)) {
+      var k = iso(d);
+      var w = windowStats(k, len);
+      windowScore[k] = w;
+      if (w.peakBand <= state.calmBand) {
+        calmStart[k] = w.pub.length ? "pub" : "clean";
+        calmTotal++;
+      }
+    }
+  }
+
+  /* ---------------- rendering ---------------- */
+
+  var ICON = {
+    sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+    moon: '<path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/>',
+    system: '<rect x="2.5" y="4" width="19" height="13" rx="1.5"/><path d="M8.5 21h7M12 17v4"/>'
+  };
+
+  var THEMES = [
+    { id: "light", name: "Light", icon: "sun" },
+    { id: "dark", name: "Dark", icon: "moon" },
+    { id: "system", name: "Match system", icon: "system" }
+  ];
+
+  var darkQuery = window.matchMedia ? matchMedia("(prefers-color-scheme: dark)") : null;
+
+  function applyTheme() {
+    var dark = state.theme === "dark" ||
+      (state.theme === "system" && darkQuery && darkQuery.matches);
+    document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+  }
+
+  function renderTheme() {
+    el.theme.innerHTML = "";
+    THEMES.forEach(function (t) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.setAttribute("role", "radio");
+      b.setAttribute("aria-checked", t.id === state.theme ? "true" : "false");
+      b.setAttribute("aria-label", t.name);
+      b.title = t.name;
+      b.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" ' +
+        'stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + ICON[t.icon] + '</svg>';
+      b.addEventListener("click", function () {
+        state.theme = t.id;
+        applyTheme();
+        renderTheme();
+        save();
+      });
+      el.theme.appendChild(b);
+    });
+  }
+
+  // Following the system means following it as it changes, not just at load.
+  if (darkQuery && darkQuery.addEventListener) {
+    darkQuery.addEventListener("change", function () {
+      if (state.theme === "system") applyTheme();
+    });
+  }
+
+  var TRIP_LENGTHS = [3, 7, 10, 14];
+
+  // Past "about half" a window is not a quiet trip by any reading, so the
+  // ceiling stops there rather than offering choices nobody would make.
+  var MAX_CEILING_BAND = 3;
+
+  function renderToggle() {
+    el.neighbours.setAttribute("aria-pressed", state.neighbours ? "true" : "false");
+  }
+
+  // Both option rows behave identically, so they share one builder: discrete
+  // buttons rather than a segmented control or a slider, so every row in the
+  // panel reads at the same weight as the legend below it.
+  function renderOptions(host, values, current, label, onPick) {
+    host.innerHTML = "";
+    values.forEach(function (v) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "opt";
+      b.setAttribute("role", "radio");
+      b.setAttribute("aria-checked", v === current ? "true" : "false");
+      b.textContent = label(v);
+      b.addEventListener("click", function () { onPick(v); });
+      host.appendChild(b);
+    });
+  }
+
+  function renderControls() {
+    renderOptions(el.tripLen, TRIP_LENGTHS, state.tripLen,
+      function (v) { return v + " days"; },
+      function (v) { state.tripLen = v; save(); renderControls(); recalc(); });
+
+    // The ceiling is offered as bare swatches in the calendar's own colours and
+    // shape — no labels, because the legend below already names every band and
+    // repeating it here would say the same thing twice. The chosen one carries
+    // a tick, matching the checkbox in the row above.
+    el.calmBand.innerHTML = "";
+    BANDS.slice(0, MAX_CEILING_BAND + 1).forEach(function (b, i) {
+      var btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "opt-band " + b.cls;
+      btn.setAttribute("role", "radio");
+      btn.setAttribute("aria-checked", i === state.calmBand ? "true" : "false");
+      btn.setAttribute("aria-label", b.label);
+      btn.title = b.label;
+      btn.addEventListener("click", function () {
+        state.calmBand = i;
+        save();
+        renderControls();
+        recalc();
+      });
+      el.calmBand.appendChild(btn);
+    });
+  }
+
+  function renderLegend() {
+    el.legend.innerHTML = "";
+    var intro = document.createElement("span");
+    intro.textContent = "Share on school holiday";
+    el.legend.appendChild(intro);
+
+    // The lowest band is a day with no heat at all. It needs no swatch and no
+    // label — a legend entry would only draw the eye to the absence of data.
+    BANDS.slice(1).forEach(function (b) {
+      var s = document.createElement("span");
+      s.className = "sw " + b.cls;
+      s.textContent = b.label;
+      el.legend.appendChild(s);
+    });
+
+    var row = document.createElement("div");
+    row.className = "legend legend-cool";
+    row.appendChild(document.createTextNode("A calm " + state.tripLen + "-day trip can start here"));
+    [["cw", "clear"], ["cwp", "public holiday inside"]].forEach(function (pair) {
+      var sw = document.createElement("span");
+      sw.className = "sw " + pair[0];
+      sw.textContent = pair[1];
+      row.appendChild(sw);
+    });
+    el.legend.appendChild(row);
+  }
+
+  function renderCalendar() {
+    var frag = document.createDocumentFragment();
+    var todayIso = iso(new Date());
+
+    for (var m = 0; m < 12; m++) {
+      var card = document.createElement("section");
+      card.className = "month";
+
+      var first = new Date(state.year, m, 1);
+      var daysInMonth = new Date(state.year, m + 1, 0).getDate();
+
+      var sum = 0;
+      for (var dd = 1; dd <= daysInMonth; dd++) sum += scoreOf(iso(new Date(state.year, m, dd)));
+      var avg = sum / daysInMonth;
+
+      var h = document.createElement("h2");
+      h.innerHTML = fmtMonth.format(first) + ' <span class="mavg">' + Math.round(avg) + '</span>';
+      card.appendChild(h);
+
+      var grid = document.createElement("div");
+      grid.className = "grid";
+
+      var blank = document.createElement("div");
+      blank.className = "hd";
+      grid.appendChild(blank);
+      WEEKDAYS.forEach(function (w) {
+        var hd = document.createElement("div");
+        hd.className = "hd";
+        hd.textContent = w;
+        grid.appendChild(hd);
+      });
+
+      var lastDay = new Date(state.year, m, daysInMonth);
+      for (var cursor = mondayOf(first); cursor <= lastDay; cursor = addDays(cursor, 7)) {
+        var wk = document.createElement("div");
+        wk.className = "wk";
+        wk.textContent = isoWeekNo(cursor);
+        grid.appendChild(wk);
+
+        for (var i = 0; i < 7; i++) {
+          var d = addDays(cursor, i);
+          var cell = document.createElement("div");
+          if (d.getMonth() !== m) {
+            cell.className = "day pad";
+            cell.setAttribute("aria-hidden", "true");
+          } else {
+            var k = iso(d);
+            var sc = scoreOf(k);
+            var b = band(sc);
+            cell.className = "day " + (calmStart[k] ? (calmStart[k] === "pub" ? "cwp" : "cw") : b.cls);
+            cell.textContent = d.getDate();
+            cell.title = fmtLong.format(d) + " · " + Math.round(sc) + " on holiday · " + b.label +
+              (calmStart[k]
+                ? " · a calm " + state.tripLen + "-day trip can start here" +
+                  (calmStart[k] === "pub" ? ", public holiday included" : "")
+                : "");
+            var rec = data.days[k];
+            if (rec && Object.keys(rec.pub).length) cell.classList.add("ph");
+            if (k === todayIso) cell.classList.add("today");
+          }
+          grid.appendChild(cell);
+        }
+      }
+
+      card.appendChild(grid);
+      frag.appendChild(card);
+    }
+
+    el.calendar.innerHTML = "";
+    el.calendar.appendChild(frag);
+  }
+
+  /* ---------------- wiring ---------------- */
+
+  function recalc() {
+    if (!data) return;
+    computeScores();
+    computeCalmStarts();
+    // The count sits in a fixed three-character slot so the sentence after it
+    // does not jump sideways when the number gains a digit. A year cannot hold
+    // more than 366 start dates, so three is always enough.
+    el.calmCount.innerHTML = '<span class="tally">' + calmTotal + "</span> start date" +
+      (calmTotal === 1 ? "" : "s") + " in " + state.year;
+    renderLegend();
+    renderCalendar();
+  }
+
+  function setStatus(msg, isErr) {
+    el.status.textContent = msg || "";
+    el.status.className = "status" + (isErr ? " err" : "");
+  }
+
+  function loadKey() {
+    return state.year + "|" + (state.neighbours ? "eu" : "de");
+  }
+
+  function load() {
+    renderYears();
+    var key = loadKey();
+    if (loadedYear === key && data) { recalc(); return; }
+    setStatus("Loading holiday data for " + state.year + "…");
+    loadYear(state.year)
+      .then(function (index) {
+        data = index;
+        loadedYear = key;
+        var any = Object.keys(index.days).some(function (k) {
+          return Object.keys(index.days[k].school).length > 0;
+        });
+        yearOk[state.year] = any;
+        setStatus(any ? "" : "No school-holiday data published for " + state.year + " yet. Try an earlier year.", !any);
+        recalc();
+        Promise.all([probeYear(state.year - 1), probeYear(state.year + 1)]).then(renderYears);
+      })
+      .catch(function (err) {
+        setStatus("Could not load holiday data: " + err.message + ". Check your connection and reload.", true);
+      });
+  }
+
+  function save() {
+    try {
+      localStorage.setItem(CACHE_PREFIX + "prefs", JSON.stringify({
+        neighbours: state.neighbours,
+        tripLen: state.tripLen,
+        calmBand: state.calmBand,
+        theme: state.theme
+      }));
+    } catch (e) { /* ignore */ }
+  }
+
+  function restore() {
+    try {
+      var raw = localStorage.getItem(CACHE_PREFIX + "prefs");
+      if (!raw) return;
+      var p = JSON.parse(raw);
+      if (typeof p.neighbours === "boolean") state.neighbours = p.neighbours;
+      if (typeof p.tripLen === "number") state.tripLen = p.tripLen;
+      if (typeof p.calmBand === "number" && p.calmBand >= 0 && p.calmBand <= MAX_CEILING_BAND) {
+        state.calmBand = p.calmBand;
+      }
+      if (p.theme === "light" || p.theme === "dark" || p.theme === "system") state.theme = p.theme;
+    } catch (e) { /* ignore */ }
+  }
+
+  // OpenHolidays starts in 2020. The far end is not a fixed date — German states
+  // publish their Ferien two to four years out — so it is probed rather than
+  // guessed: a year with no summer holidays on file has not been published yet.
+  var MIN_YEAR = 2020;
+  var MAX_YEAR = new Date().getFullYear() + 4;
+  var yearOk = {};
+
+  function probeYear(y) {
+    if (y < MIN_YEAR || y > MAX_YEAR) return Promise.resolve(false);
+    if (yearOk[y] !== undefined) return Promise.resolve(yearOk[y]);
+    return getJSON("/SchoolHolidays?countryIsoCode=DE&languageIsoCode=DE&validFrom=" + y +
+      "-06-01&validTo=" + y + "-09-15", "probe-" + y)
+      .then(function (arr) { yearOk[y] = arr.length > 0; return yearOk[y]; })
+      .catch(function () { return true; });
+  }
+
+  function renderYears() {
+    el.yearLabel.textContent = state.year;
+    document.title = "Feriendichte " + state.year;
+    [[el.yearPrev, state.year - 1], [el.yearNext, state.year + 1]].forEach(function (pair) {
+      var btn = pair[0], y = pair[1];
+      btn.textContent = y;
+      btn.disabled = yearOk[y] === false || y < MIN_YEAR || y > MAX_YEAR;
+      btn.setAttribute("aria-label", "Show " + y);
+    });
+  }
+
+  function goToYear(y) {
+    if (y === state.year || yearOk[y] === false) return;
+    state.year = y;
+    renderYears();
+    load();
+  }
+
+  el.yearPrev.addEventListener("click", function () { goToYear(state.year - 1); });
+  el.yearNext.addEventListener("click", function () { goToYear(state.year + 1); });
+
+  el.neighbours.addEventListener("click", function () {
+    state.neighbours = !state.neighbours;
+    renderToggle();
+    save();
+    load();
+  });
+
+  restore();
+  applyTheme();
+  renderTheme();
+  renderControls();
+  renderToggle();
+  renderLegend();
+  load();
+})();
+</script>
+<script>
+if ("serviceWorker" in navigator) {
+  addEventListener("load", function () {
+    navigator.serviceWorker.register("sw.js").catch(function () {});
+  });
+}
+</script>
+</body>
+</html>
