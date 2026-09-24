@@ -541,10 +541,6 @@ button:hover { border-color: var(--accent); }
 (function () {
   "use strict";
 
-  // Keep this in step with VERSION in sw.js — they are bumped together so a
-  // released build and the cache it lives in always carry the same name.
-  var APP_VERSION = "v18";
-
   var API = "https://openholidaysapi.org";
   var CACHE_PREFIX = "ferienradar:v1:";
 
@@ -980,6 +976,20 @@ button:hover { border-color: var(--accent); }
   // ceiling stops there rather than offering choices nobody would make.
   var MAX_CEILING_BAND = 3;
 
+  // The version lives in exactly one place: VERSION in sw.js. Reading it back
+  // out of the file means the number on screen is the build actually running —
+  // with a worker active this fetch is served from its cache, so it reports the
+  // cached build rather than whatever happens to be on the server.
+  function showVersion() {
+    fetch("sw.js")
+      .then(function (r) { return r.text(); })
+      .then(function (src) {
+        var m = /VERSION\s*=\s*"feriendichte-([^"]+)"/.exec(src);
+        if (m) el.version.textContent = m[1];
+      })
+      .catch(function () { /* no worker file, no badge */ });
+  }
+
   function renderToggle() {
     el.neighbours.setAttribute("aria-pressed", state.neighbours ? "true" : "false");
   }
@@ -1240,7 +1250,7 @@ button:hover { border-color: var(--accent); }
   });
 
   restore();
-  el.version.textContent = APP_VERSION;
+  showVersion();
   applyTheme();
   renderTheme();
   renderControls();

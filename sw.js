@@ -1,6 +1,8 @@
-// Bump this when any of the cached files change, or browsers will keep serving
-// the old copies from disk forever.
-var VERSION = "feriendichte-v18";
+// The one place the build number lives. Bump it whenever index.html changes,
+// or browsers keep serving the old copy from disk forever. The page reads this
+// line back out of this file to show the number in the header, so there is
+// nothing to keep in step by hand.
+var VERSION = "feriendichte-v21";
 
 var SHELL = [
   "./",
