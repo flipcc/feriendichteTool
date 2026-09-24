@@ -1,6 +1,6 @@
 // Bump this when any of the cached files change, or browsers will keep serving
 // the old copies from disk forever.
-var VERSION = "feriendichte-v17";
+var VERSION = "feriendichte-v18";
 
 var SHELL = [
   "./",

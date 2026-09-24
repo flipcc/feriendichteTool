@@ -145,6 +145,15 @@ a { color: var(--accent); text-underline-offset: 2px; }
   cursor: default;
 }
 
+.head-right { display: flex; align-items: center; gap: 10px; }
+
+.version {
+  font-family: var(--mono-num);
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+  color: var(--ink-3);
+}
+
 .theme { display: flex; gap: 4px; }
 
 .theme button {
@@ -493,7 +502,10 @@ button:hover { border-color: var(--accent); }
     </div>
   </div>
 
-  <div class="theme" id="theme" role="radiogroup" aria-label="Colour theme"></div>
+  <div class="head-right">
+    <span class="version" id="version"></span>
+    <div class="theme" id="theme" role="radiogroup" aria-label="Colour theme"></div>
+  </div>
 </header>
 
 <section class="panel" aria-labelledby="ctrl-h">
@@ -528,6 +540,10 @@ button:hover { border-color: var(--accent); }
 <script>
 (function () {
   "use strict";
+
+  // Keep this in step with VERSION in sw.js — they are bumped together so a
+  // released build and the cache it lives in always carry the same name.
+  var APP_VERSION = "v18";
 
   var API = "https://openholidaysapi.org";
   var CACHE_PREFIX = "ferienradar:v1:";
@@ -605,6 +621,7 @@ button:hover { border-color: var(--accent); }
     yearLabel: document.getElementById("yearLabel"),
     yearPrev: document.getElementById("yearPrev"),
     yearNext: document.getElementById("yearNext"),
+    version: document.getElementById("version"),
     theme: document.getElementById("theme"),
     neighbours: document.getElementById("neighbours"),
     tripLen: document.getElementById("tripLen"),
@@ -1223,6 +1240,7 @@ button:hover { border-color: var(--accent); }
   });
 
   restore();
+  el.version.textContent = APP_VERSION;
   applyTheme();
   renderTheme();
   renderControls();
